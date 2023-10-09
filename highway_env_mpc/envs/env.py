@@ -132,7 +132,7 @@ class HighwayEnvMPC(AbstractEnv):
             "action": {
                 "type": "ContinuousAction",
             },
-            "lanes_count": 3,
+            "lanes_count": 5,
             "vehicles_count": 20,
             "controlled_vehicles": 1,
             "initial_lane_id": -1,
