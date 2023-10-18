@@ -160,4 +160,5 @@ cython_debug/
 #.idea/
 
 # Rendered Images
-./render_images/
+render_images/*.png
+*.mp4

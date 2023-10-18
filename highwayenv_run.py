@@ -182,13 +182,15 @@ def LLM_setup():
     answer_format = "Please reply your action by choosing one from {Lane Left, Lane Keep, Lane Right} with reasons in a format of [action]: reasons. For example you reply format could be: \
     [Lane Keep], Because Lane Keep has largest value of TTC."
     completion = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            # model = "gpt-4",
+            # model="gpt-3.5-turbo",
+            model = "gpt-4",
             messages=[{"role": "user", "content": question + answer_format}]
             )
-    # print(completion["choices"][0]["message"]["content"].split("\n"))
+    print(completion["choices"][0]["message"]["content"].split("\n")[0])
+
     split_answer = completion["choices"][0]["message"]["content"].split("\n")[0]
     print(split_answer.split("[")[1].split("]")[0], split_answer.split("[")[1].split("]")[-1])
+    # assert False
 
 
 def ask_LLM(obs):
@@ -241,7 +243,8 @@ def ask_LLM(obs):
     answer_format = "Please reply your action by choosing one from {Lane Left, Lane Keep, Lane Right} with reasons in a format of [action]: reasons. For example you reply format could be: \
     [Lane Keep], Because Lane Keep has largest value of TTC."
     completion = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            # model="gpt-3.5-turbo",
+            model = "gpt-4",
             messages=[{"role": "user", "content": question + text + answer_format}]
             )
     answer = completion["choices"][0]["message"]["content"].split("\n")[0]
@@ -250,7 +253,8 @@ def ask_LLM(obs):
 
     if behavior not in ["Lane Keep", "Lane Left", "Lane Right"]:
         completion = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
+                # model="gpt-3.5-turbo",
+                model = "gpt-4",
                 messages=[{"role": "user", "content": "Your reply format is not correct, " + answer_format}]
                 )
         answer = completion["choices"][0]["message"]["content"].split("\n")[0]
@@ -267,7 +271,8 @@ def mpc_fail_feedback_llm(old_behavior, Current_lane):
     answer_format = "Please reply your action by choosing one from {Lane Left, Lane Keep, Lane Right} with reasons in a format of [action]: reasons. For example you reply format could be: \
     [Lane Keep], Because Lane Keep has largest value of TTC."
     completion = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            # model="gpt-3.5-turbo",
+            model = "gpt-4",
             messages=[{"role": "user", "content": prompt + answer_format}]
             )
     answer = completion["choices"][0]["message"]["content"].split("\n")[0]
@@ -276,7 +281,8 @@ def mpc_fail_feedback_llm(old_behavior, Current_lane):
 
     if behavior not in ["Lane Keep", "Lane Left", "Lane Right"] or behavior == old_behavior:
         completion = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
+                # model="gpt-3.5-turbo",
+                model = "gpt-4",
                 messages=[{"role": "user", "content": f"Your reply format is not correct, " + answer_format + " please also avoid " + old_behavior}]
                 )
         answer = completion["choices"][0]["message"]["content"].split("\n")[0]
