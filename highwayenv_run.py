@@ -322,7 +322,7 @@ def fail_safe(obs, Current_lane):
     #                 )
     
     ego, surroundings = filter_obs(obs)
-    x, y, vx, vy, _ = ego[1:]
+    x, y, vx, vy, heading = ego[1:]
     ego_idx = int(np.clip((y + 2) // 4, 0, 2))
     acc, ttc = 5, 100
     for s in surroundings:
@@ -332,8 +332,8 @@ def fail_safe(obs, Current_lane):
             ttc = min(ttc, max(0, (sx- x) / (vx - svx)))
             # acc = min(acc, 0.8*(svx - vx))
             acc = min(acc, -vx / ttc)
-            print(sx, x, svx, vx, ttc, acc)
-    action = np.array([acc, 0])
+            print(sx, x, svx, vx, ttc, acc)    
+    action = np.array([acc, -heading*0.4])
     return action
 
 # LLM_MODEL = "gpt-3.5-turbo"
@@ -392,5 +392,4 @@ while not done:
     cnt += 1
     if cnt >= MAX_STEPS:
         done = True
-velocity_collection = np.array(velocity_collection)
-np.save('velocity_trace.npy', velocity_collection)
+    np.save('velocity_trace.npy', np.array(velocity_collection))
