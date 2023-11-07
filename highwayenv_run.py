@@ -329,7 +329,7 @@ def fail_safe(obs, Current_lane):
         sx, sy, svx, svy, _ = s[1:]
         s_idx = int(np.clip((sy + 2) // 4, 0, 2))
         if s_idx == ego_idx and sx > x and vx > svx:
-            ttc = min(ttc, max(0, (sx- x - 2) / (vx - svx)))
+            ttc = min(ttc, max(0, (sx- x) / (vx - svx)))
             # acc = min(acc, 0.8*(svx - vx))
             acc = min(acc, -vx / ttc)
             print(sx, x, svx, vx, ttc, acc)
@@ -338,6 +338,7 @@ def fail_safe(obs, Current_lane):
 
 # LLM_MODEL = "gpt-3.5-turbo"
 LLM_MODEL = "gpt-4"
+MAX_STEPS = 600
 env = gym.make("highway-env-mpc-v0", render_mode='rgb_array')
 done, cnt = False, 0
 obs, _ = env.reset()
@@ -345,6 +346,7 @@ action_periods = 5
 all_actions = ["Lane Keep", "Lane Right", "Lane Left"]
 behavior = "Lane Keep"
 LLM_setup()
+velocity_collection = []
 
 while not done:
     print(f"step {cnt} starts: ")
@@ -380,8 +382,15 @@ while not done:
                 print("all MPCs failed, turns to backup")
                 action = fail_safe(obs, Current_lane)
 
-    obs, reward, done, truncated, _ = env.step(action)   
+    obs, reward, done, truncated, _ = env.step(action)
+    ego_observation, _ = filter_obs(obs)
+    _, _, ego_vx, ego_vy, _ = ego_observation[1:]
+    velocity_collection.append([ego_vx, ego_vy])  
     render_img = env.render()
     # # Save image    
-    cv2.imwrite(f"/mnt/d/highway-env-mpc/render_images/img_{cnt:04}.png", render_img)
+    cv2.imwrite(f"/mnt/d/highway-env-mpc/render_images/1107/img_{cnt:04}.png", render_img)
     cnt += 1
+    if cnt >= MAX_STEPS:
+        done = True
+velocity_collection = np.array(velocity_collection)
+np.save('velocity_trace.npy', velocity_collection)
