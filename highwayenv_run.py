@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 import pygame
 import cv2
 import openai
+import time
 
 
 def filter_obs(obs):
@@ -144,10 +145,14 @@ def mpc(env, obs, target="lane 0"):
             else:
                 raise ValueError("Undefined lane")
   
-            if k < 5:
-                opti.subject_to(opti.bounded(lane_left + 1, y_adj, lane_right-1))
+            # if k < 5:
+            #     opti.subject_to(opti.bounded(lane_left + 1, y_adj, lane_right-1))
+            # else:
+            #     opti.subject_to(opti.bounded(lane_left+1.5, y_adj, lane_right-1.5))
+            if k < 2:
+                opti.subject_to(opti.bounded(lane_left + 0.6, y_adj, lane_right-1.3))
             else:
-                opti.subject_to(opti.bounded(lane_left+1.5, y_adj, lane_right-1.5))
+                opti.subject_to(opti.bounded(lane_left+1.5, y_adj, lane_right-1.5))            
             if other_x[0] < ego_obs[1] + 10 or other_x[0] > ego_obs[1] - 10:  
                 if other_y[i] >= lane_left + 1 and other_y[i] <= lane_right - 1:
                     # safety_constraint = csd.sqrt((x_adj - other_x[i])**2) - vehicle_length
@@ -332,13 +337,13 @@ def fail_safe(obs, Current_lane):
             ttc = min(ttc, max(0, (sx- x) / (vx - svx)))
             # acc = min(acc, 0.8*(svx - vx))
             acc = min(acc, -vx / ttc)
-            print(sx, x, svx, vx, ttc, acc)    
-    action = np.array([acc, -heading*0.4])
+            print(sx, x, svx, vx, ttc, acc, heading)    
+    action = np.array([acc, -heading])
     return action
 
 # LLM_MODEL = "gpt-3.5-turbo"
 LLM_MODEL = "gpt-4"
-MAX_STEPS = 600
+MAX_STEPS = 300
 env = gym.make("highway-env-mpc-v0", render_mode='rgb_array')
 done, cnt = False, 0
 obs, _ = env.reset()
@@ -347,9 +352,12 @@ all_actions = ["Lane Keep", "Lane Right", "Lane Left"]
 behavior = "Lane Keep"
 LLM_setup()
 velocity_collection = []
+timing = []
+TRIAL_NUM = 1
 
 while not done:
     print(f"step {cnt} starts: ")
+    now = time.time()
     if cnt % action_periods == 0:
         attempt = 0
         while attempt < 5:
@@ -383,13 +391,15 @@ while not done:
                 action = fail_safe(obs, Current_lane)
 
     obs, reward, done, truncated, _ = env.step(action)
+    timing.append(time.time() - now)
     ego_observation, _ = filter_obs(obs)
     _, _, ego_vx, ego_vy, _ = ego_observation[1:]
     velocity_collection.append([ego_vx, ego_vy])  
     render_img = env.render()
     # # Save image    
-    cv2.imwrite(f"/mnt/d/highway-env-mpc/render_images/1107/img_{cnt:04}.png", render_img)
+    cv2.imwrite(f"/mnt/d/highway-env-mpc/render_images/1212_TRAIL_{TRIAL_NUM}/img_{cnt:04}.png", render_img)
     cnt += 1
     if cnt >= MAX_STEPS:
         done = True
-    np.save('velocity_trace.npy', np.array(velocity_collection))
+    np.save(f'velocity_trace_{TRIAL_NUM}.npy', np.array(velocity_collection))
+    np.save(f'timing_{TRIAL_NUM}.npy', np.array(timing))
