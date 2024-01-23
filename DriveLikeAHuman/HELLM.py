@@ -115,7 +115,7 @@ output = None
 done = truncated = False
 frame = 0
 MAX_STEPS = 300
-TRIAL_NUM = 9
+TRIAL_NUM = 6
 
 velocity_collection = []
 timing = []

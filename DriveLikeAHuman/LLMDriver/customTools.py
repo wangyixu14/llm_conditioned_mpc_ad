@@ -140,10 +140,10 @@ def safety_check(ego, veh, relativeSpeed, VEHICLE_LENGTH, TIME_HEAD_WAY):
         noise = np.random.uniform(0, 1.5)
         lower_bound, upper_bound = veh.lanePosition - noise, veh.lanePosition + noise
         safety = True
-        if (relativeSpeed > 0 and ego.lanePosition <= lower_bound) or (lower_bound<=ego.lanePosition<=upper_bound and relativeSpeed < 0):
-            safety = ego.lanePosition + relativeSpeed*TIME_HEAD_WAY + VEHICLE_LENGTH < lower_bound
-        if (relativeSpeed > 0 and lower_bound<=ego.lanePosition<=upper_bound) or (relativeSpeed < 0 and upper_bound <= ego.lanePosition):
-            safety = ego.lanePosition + relativeSpeed*TIME_HEAD_WAY + VEHICLE_LENGTH > upper_bound
+        if (relativeSpeed > 0 and ego.lanePosition <= lower_bound) or (relativeSpeed <= 0  and lower_bound<=ego.lanePosition<=upper_bound):
+            safety = (ego.lanePosition + relativeSpeed*TIME_HEAD_WAY + VEHICLE_LENGTH) < lower_bound
+        if (relativeSpeed > 0 and lower_bound<=ego.lanePosition<=upper_bound) or (relativeSpeed <= 0 and upper_bound <= ego.lanePosition):
+            safety = (ego.lanePosition + relativeSpeed*TIME_HEAD_WAY - VEHICLE_LENGTH) > upper_bound
         return safety
 
 class isChangeLaneConflictWithCar:
