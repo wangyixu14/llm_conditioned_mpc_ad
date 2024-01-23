@@ -136,6 +136,15 @@ class getLaneInvolvedCar:
             leading_car_vel = round(self.sce.vehicles[leadingCar].speed,1)
             return f"{leadingCar} and {rearingCar} is driving on {laneID}, and {leadingCar} is driving at {leading_car_vel}m/s in front of ego car for {distance} meters, while {rearingCar} is driving behind ego car. You need to make sure that your actions do not conflict with each of the vehicles mentioned."
 
+def safety_check(ego, veh, relativeSpeed, VEHICLE_LENGTH, TIME_HEAD_WAY):
+        noise = np.random.uniform(0, 1.5)
+        lower_bound, upper_bound = veh.lanePosition - noise, veh.lanePosition + noise
+        safety = True
+        if (relativeSpeed > 0 and ego.lanePosition <= lower_bound) or (lower_bound<=ego.lanePosition<=upper_bound and relativeSpeed < 0):
+            safety = ego.lanePosition + relativeSpeed*TIME_HEAD_WAY + VEHICLE_LENGTH < lower_bound
+        if (relativeSpeed > 0 and lower_bound<=ego.lanePosition<=upper_bound) or (relativeSpeed < 0 and upper_bound <= ego.lanePosition):
+            safety = ego.lanePosition + relativeSpeed*TIME_HEAD_WAY + VEHICLE_LENGTH > upper_bound
+        return safety
 
 class isChangeLaneConflictWithCar:
     def __init__(self, sce: Scenario) -> None:
@@ -154,19 +163,27 @@ class isChangeLaneConflictWithCar:
             return "Your input is not a valid vehicle id, make sure you use `Get Lane Involved Car` tool first!"
         veh = self.sce.vehicles[vid]
         ego = self.sce.vehicles['ego']
-        loc = veh.lanePosition + np.random.uniform(-2, 2)
-        if loc >= ego.lanePosition:
-            relativeSpeed = ego.speed - veh.speed
-            if loc - ego.lanePosition - self.VEHICLE_LENGTH > self.TIME_HEAD_WAY * relativeSpeed:
-                return f"change lane to `{laneID}` is safe with `{vid}`."
-            else:
-                return f"change lane to `{laneID}` may be conflict with `{vid}`, which is unacceptable."
+
+        safety = safety_check(ego=ego, veh=veh, relativeSpeed=ego.speed - veh.speed, 
+                              VEHICLE_LENGTH=self.VEHICLE_LENGTH, TIME_HEAD_WAY=self.TIME_HEAD_WAY)
+        if safety: 
+            return f"change lane to `{laneID}` is safe with `{vid}`."
         else:
-            relativeSpeed = veh.speed - ego.speed
-            if ego.lanePosition - loc - self.VEHICLE_LENGTH > self.TIME_HEAD_WAY * relativeSpeed:
-                return f"change lane to `{laneID}` is safe with `{vid}`."
-            else:
-                return f"change lane to `{laneID}` may be conflict with `{vid}`, which is unacceptable."
+            return f"change lane to `{laneID}` may be conflict with `{vid}`, which is unacceptable."
+
+        # loc = veh.lanePosition + np.random.uniform(-2, 2)
+        # if loc >= ego.lanePosition:
+        #     relativeSpeed = ego.speed - veh.speed
+        #     if loc - ego.lanePosition - self.VEHICLE_LENGTH > self.TIME_HEAD_WAY * relativeSpeed:
+        #         return f"change lane to `{laneID}` is safe with `{vid}`."
+        #     else:
+        #         return f"change lane to `{laneID}` may be conflict with `{vid}`, which is unacceptable."
+        # else:
+        #     relativeSpeed = veh.speed - ego.speed
+        #     if ego.lanePosition - loc - self.VEHICLE_LENGTH > self.TIME_HEAD_WAY * relativeSpeed:
+        #         return f"change lane to `{laneID}` is safe with `{vid}`."
+        #     else:
+        #         return f"change lane to `{laneID}` may be conflict with `{vid}`, which is unacceptable."
 
 
 class isAccelerationConflictWithCar:
@@ -188,16 +205,22 @@ class isAccelerationConflictWithCar:
         if veh.lane_id != ego.lane_id:
             return f'{vid} is not in the same lane with ego, please call `Get Lane Involved Car` and rethink your input.'
         if veh.lane_id == ego.lane_id:
-            loc = veh.lanePosition + np.random.uniform(-2, 2)
-            if loc >= ego.lanePosition:
-                relativeSpeed = ego.speed + self.acceleration - veh.speed
-                distance = loc - ego.lanePosition - self.VEHICLE_LENGTH * 2
-                if distance > self.TIME_HEAD_WAY * relativeSpeed:
-                    return f"acceleration is safe with `{vid}`."
-                else:
-                    return f"acceleration may be conflict with `{vid}`, which is unacceptable."
+            # loc = veh.lanePosition + np.random.uniform(-2, 2)
+            # if loc >= ego.lanePosition:
+            #     relativeSpeed = ego.speed + self.acceleration - veh.speed
+            #     distance = loc - ego.lanePosition - self.VEHICLE_LENGTH
+            #     if distance > self.TIME_HEAD_WAY * relativeSpeed:
+            #         return f"acceleration is safe with `{vid}`."
+            #     else:
+            #         return f"acceleration may be conflict with `{vid}`, which is unacceptable."
+            # else:
+            #     return f"acceleration is safe with {vid}"
+            safety = safety_check(ego=ego, veh=veh, relativeSpeed=ego.speed + self.acceleration - veh.speed, 
+                              VEHICLE_LENGTH=self.VEHICLE_LENGTH, TIME_HEAD_WAY=self.TIME_HEAD_WAY)
+            if safety:
+                return f"acceleration is safe with `{vid}`."
             else:
-                return f"acceleration is safe with {vid}"
+                return f"acceleration may be conflict with `{vid}`, which is unacceptable."
         else:
             return f"acceleration is safe with {vid}"
 
@@ -220,16 +243,22 @@ class isKeepSpeedConflictWithCar:
         if veh.lane_id != ego.lane_id:
             return f'{vid} is not in the same lane with ego, please call `Get Lane Involved Car` and rethink your input.'
         if veh.lane_id == ego.lane_id:
-            loc = veh.lanePosition + np.random.uniform(-2, 2)
-            if loc >= ego.lanePosition:
-                relativeSpeed = ego.speed - veh.speed
-                distance = loc - ego.lanePosition - self.VEHICLE_LENGTH * 2
-                if distance > self.TIME_HEAD_WAY * relativeSpeed:
-                    return f"keep lane with current speed is safe with {vid}"
-                else:
-                    return f"keep lane with current speed may be conflict with {vid}, you need consider decelerate"
+            # loc = veh.lanePosition + np.random.uniform(-2, 2)
+            # if loc >= ego.lanePosition:
+            #     relativeSpeed = ego.speed - veh.speed
+            #     distance = loc - ego.lanePosition - self.VEHICLE_LENGTH
+            #     if distance > self.TIME_HEAD_WAY * relativeSpeed:
+            #         return f"keep lane with current speed is safe with {vid}"
+            #     else:
+            #         return f"keep lane with current speed may be conflict with {vid}, you need consider decelerate"
+            # else:
+            #     return f"keep lane with current speed is safe with {vid}"
+            safety = safety_check(ego=ego, veh=veh, relativeSpeed=ego.speed - veh.speed, 
+                              VEHICLE_LENGTH=self.VEHICLE_LENGTH, TIME_HEAD_WAY=self.TIME_HEAD_WAY)
+            if safety:
+                return f"acceleration is safe with `{vid}`."
             else:
-                return f"keep lane with current speed is safe with {vid}"
+                return f"acceleration may be conflict with `{vid}`, which is unacceptable."
         else:
             return f"keep lane with current speed is safe with {vid}"
 
@@ -253,15 +282,21 @@ class isDecelerationSafe:
         if veh.lane_id != ego.lane_id:
             return f'{vid} is not in the same lane with ego, please call `Get Lane Involved Car` and rethink your input.'
         if veh.lane_id == ego.lane_id:
-            loc = veh.lanePosition + np.random.uniform(-2, 2)
-            if loc >= ego.lanePosition:
-                relativeSpeed = ego.speed - veh.speed - self.deceleration
-                distance = loc - ego.lanePosition - self.VEHICLE_LENGTH
-                if distance > self.TIME_HEAD_WAY * relativeSpeed:
-                    return f"deceleration with current speed is safe with {vid}"
-                else:
-                    return f"deceleration with current speed may be conflict with {vid}, if you have no other choice, slow down as much as possible"
+            # loc = veh.lanePosition + np.random.uniform(-2, 2)
+            # if loc >= ego.lanePosition:
+            #     relativeSpeed = ego.speed - veh.speed - self.deceleration
+            #     distance = loc - ego.lanePosition - self.VEHICLE_LENGTH
+            #     if distance > self.TIME_HEAD_WAY * relativeSpeed:
+            #         return f"deceleration with current speed is safe with {vid}"
+            #     else:
+            #         return f"deceleration with current speed may be conflict with {vid}, if you have no other choice, slow down as much as possible"
+            # else:
+            #     return f"deceleration with current speed is safe with {vid}"
+            safety = safety_check(ego=ego, veh=veh, relativeSpeed=ego.speed - veh.speed - self.deceleration, 
+                              VEHICLE_LENGTH=self.VEHICLE_LENGTH, TIME_HEAD_WAY=self.TIME_HEAD_WAY)
+            if safety:
+                return f"acceleration is safe with `{vid}`."
             else:
-                return f"deceleration with current speed is safe with {vid}"
+                return f"acceleration may be conflict with `{vid}`, which is unacceptable."
         else:
             return f"deceleration with current speed is safe with {vid}"

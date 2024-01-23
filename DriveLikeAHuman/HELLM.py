@@ -114,8 +114,8 @@ outputParser = OutputParser(sce, llm)
 output = None
 done = truncated = False
 frame = 0
-MAX_STEPS = 600
-TRIAL_NUM = 5
+MAX_STEPS = 300
+TRIAL_NUM = 9
 
 velocity_collection = []
 timing = []
